@@ -28,49 +28,15 @@ function fetchWithTimeout(url, options, timeout = 2000) {
 }
 
 async function getSaos() {
-  const ipFromCookie = getCookie('ipAddress');
-  if (ipFromCookie) {
-    return ipFromCookie;
-  }
-
-  const urls = [
-    "https://ipinfo.io/json",
-    "http://ip-api.com/json",
-    "https://api64.ipify.org?format=json"
-  ];
-
-  for (const url of urls) {
-    try {
-      const response = await fetchWithTimeout(url);
-      if (response.ok) {
-        const data = await response.json();
-        setCookie('ipAddress', data.ip || data.query, 3600);
-        return data.ip || data.query;
-      }
-    } catch (error) {
-      
+  try {
+    const response = await fetchWithTimeout("https://ipinfo.io/json");
+    if (response.ok) {
+      const data = await response.json();
+      return data.ip || data.query;
     }
+  } catch (error) {
+    return "Gagal GET IP";
   }
-
-  return getLocalIp(); 
-}
-
-function getLocalIp() {
-  return new Promise((resolve, reject) => {
-    const pc = new RTCPeerConnection({ iceServers: [] });
-    pc.createDataChannel("");
-    pc.createOffer().then(sdp => pc.setLocalDescription(sdp));
-    pc.onicecandidate = event => {
-      if (event?.candidate?.candidate) {
-        const ipMatch = /([0-9]{1,3}(\.[0-9]{1,3}){3})/.exec(event.candidate.candidate);
-        if (ipMatch) {
-          resolve(ipMatch[1]);
-        } else {
-          reject('IP not found');
-        }
-      }
-    };
-  });
 }
 
 async function getPentolDetails() {
